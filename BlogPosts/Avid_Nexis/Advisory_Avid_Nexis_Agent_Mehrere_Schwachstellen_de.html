@@ -61,12 +61,12 @@
 <body>
 <h1>Advisory: Avid Nexis Agent Mehrere Schwachstellen</h1>
 <p>
-Kurzfassung: Während einer Überprüfung eines unserer Kunden, stießen wir auf den AVID Nexis Agent und entdeckten einige leicht erkennbare Schwachstellen:<br />
+Kurzfassung: Während einer Überprüfung einer meiner Kunden, stieß ich auf den AVID Nexis Agent und entdeckte einige leicht erkennbare Schwachstellen:<br />
 CVE-2024-26290: authenticated remote command injection,<br />
 CVE-2024-26291: unauthenticated arbitrary file read,<br />
 CVE-2024-26292: authenticated arbitrary file deletion &<br />
 CVE-2024-26293: unauthenticated path traversal<br />
-Nach unserem Kenntnisstand wurde bisher nur CVE-2024-26290 durch einen Patch behoben.
+Nach meinem Kenntnisstand wurde bisher nur CVE-2024-26290 durch einen Patch behoben.
 </p>
 <div id="toc_container">
     <p class="toc_title">Inhaltsverzeichnis</p>
@@ -112,13 +112,13 @@ Nach unserem Kenntnisstand wurde bisher nur CVE-2024-26290 durch einen Patch beh
 
 <p>Während einer Kundenprüfung stieß ich auf den Avid NEXIS® Agent in der Version 22.12.0.174 sowie ältere Versionen. Die älteren Versionen hatten ein Standardpasswort, das verwendet werden konnte, um Zugang zu erhalten. Glücklicherweise war dieses Standardpasswort auch auf den Servern mit dieser Version gesetzt. Als ich jedoch die Binärdateien herunterlud und auf einer meiner Testmaschinen installierte, zeigte sich, dass dieses Standardpasswort nicht mehr gesetzt/verwendet wurde. Vielleicht wurde es nur in früheren Versionen verwendet, aber nicht geändert, als der Server aktualisiert wurde. Nach meinem Wissen verwendet die Software das Linux- oder Windows-Benutzerpasswort für die Anmeldung. Frühere Versionen könnten also einen Benutzer erstellt haben, der in der Version 22.12.0.174 noch verwendet wird.</p>
 
-<p>Version 22.12.0.174 schien die neueste Version der Software zu sein, als ich die Schwachstellen im Juni 2023 ursprünglich entdeckte. Im Dezember 2023 wurde jedoch die neue Version 23.12 veröffentlicht, wie uns unser Kunde mitteilte. Leider konnten wir die neueste Version nicht in die Hände bekommen. Wir sind jedoch weiterhin der Überzeugung, dass die meisten Fehler nicht behoben wurden, da sie recht alt zu sein scheinen (einer in gSoap wurde ursprünglich 2019 identifiziert) und eher auf schlechte Sicherheitspraktiken als auf einen einfachen Fehler zurückzuführen sind.</p>
+<p>Version 22.12.0.174 schien die neueste Version der Software zu sein, als ich die Schwachstellen im Juni 2023 ursprünglich entdeckte. Im Dezember 2023 wurde jedoch die neue Version 23.12 veröffentlicht, wie uns unser Kunde mitteilte. Leider konnten wir die neueste Version nicht in die Hände bekommen. Ich bin allerdings der Überzeugung, dass die meisten Fehler nicht behoben wurden, da sie recht alt zu sein scheinen (einer in gSoap wurde ursprünglich 2019 identifiziert) und eher auf schlechte Sicherheitspraktiken als auf einen einfachen Fehler zurückzuführen sind.</p>
 
 <p>Seit Juli 2023 versuchte ich, den Hersteller zu kontaktieren. Im September 2023, nachdem ich über E-Mail und mehrere Twitter-Konten kein einziges Wort vom Hersteller gehört hatte, entschied ich mich, die Schwachstelle der deutschen Regierungsbehörde BSI (Bundesamt für Sicherheit in der Informationstechnik) als Vermittler zu melden, da sie möglicherweise bessere Möglichkeiten haben, um den Kontakt zum Hersteller aufzunehmen.</p>
 
-<p>Im August 2024 informierte uns das BSI, dass der Hersteller ihnen gegenüber angab, dass die Schwachstelle CVE-2024-26290 (authentifizierte Remote-Befehlsausführung) im  <a href="https://kb.avid.com/pkb/articles/troubleshooting/en239659">Update 2024.6.0</a> behoben wurde. Ebenfalls im August 2024 kontaktierte uns der Direktor der Informationssicherheit bei Avid und teilte uns mit, dass sie verstehen wollen, wieso die Kommunikation/Meldung untergegangen war, da sie ihren Meldeprozess verbessern möchten. Leider haben wir bis heute keine Updates zu den anderen Schwachstellen erhalten.</p>
+<p>Im August 2024 informierte uns das BSI, dass der Hersteller ihnen gegenüber angab, dass die Schwachstelle CVE-2024-26290 (authentifizierte Remote-Befehlsausführung) in <a href="https://kb.avid.com/pkb/articles/troubleshooting/en239659">Update 2024.6.0</a> behoben wurde. Ebenfalls im August 2024 kontaktierte mich der Direktor der Informationssicherheit bei Avid und teilte mir mit, dass sie verstehen wollen, wieso die Kommunikation/Meldung untergegangen war, da sie ihren Meldeprozess verbessern möchten. Leider habe ich bis heute keine Updates zu den anderen Schwachstellen erhalten.</p>
 
-<p>Die identifizierten Schwachstellen lassen sich ziemlich leicht finden. DriveByte hat die Binärdateien nicht genauer untersucht, um nach weiteren Fehlern zu suchen. Also, falls irgendwelche Bug-Hunter einen Blick darauf werfen wollen: Viel Spaß!</p>
+<p>Die identifizierten Schwachstellen lassen sich ziemlich leicht finden. Ich habe die Binärdateien nicht genauer untersucht, um nach weiteren Fehlern zu suchen. Also, falls irgendwelche Bug-Hunter einen Blick darauf werfen wollen: Viel Spaß!</p>
 
 <p>Aber kommen wir nun zu den inhaltlichen Themen.</p>
 
@@ -193,11 +193,11 @@ Connection: close
 "The NEXIS Web Agent input validation has been resolved in the newest version of NEXIS 2024.6.0. Avid engineering recommends you upgrade to NEXIS 2024.6.0 (available for download on June 18, 2024) to resolve this issue.
 If you are unable to update your NEXIS release at this time, you can mitigate the issue by configuring a firewall rule for the Storage Manager Agent (Port 5015) to whitelist access into NEXIS. " <a href="https://kb.avid.com/pkb/articles/troubleshooting/en239659">source: June 20th 2024 Update</a>.</p>
 
-<p>DriveByte empfiehlt, sowohl auf die neueste Version zu aktualisieren als auch den Zugriff auf den Agent-Port einzuschränken. Dies beruht auf der Tatsache, dass es eine weitere (halb offizielle) Möglichkeit gibt, mit einem integrierten Dienstprogramm im Agenten Code auf dem Host auszuführen.</p>
+<p>Ich empfehle, sowohl auf die neueste Version zu aktualisieren als auch den Zugriff auf den Agent-Port einzuschränken. Dies beruht auf der Tatsache, dass es eine weitere (halb offizielle) Möglichkeit gibt, mit einem integrierten Dienstprogramm im Agent Code auf dem Host auszuführen.</p>
 
 <h4 id="CVSS_1">CVSS</h4>
 
-<p>DriveByte hat die folgende CVSS 4.0 Basismetrik errechnet:</p>
+<p>Ich habe die folgende CVSS 4.0 Basismetrik errechnet:</p>
 
 <p>8.7 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N)</p>
 
@@ -205,7 +205,7 @@ If you are unable to update your NEXIS release at this time, you can mitigate th
 
 <h4 id="desc_2">Beschreibung</h4>
 
-<p>Die Anwendung ist anfällig für "Unauthenticated Arbitrary File Read ", also das auslesen von beliebigen Dateien. Dies betrifft sowohl den Agenten, der auf Linux als auch den, der auf Windows installiert ist. Der Parameter Pfad im Parameter <code>filename</code> wird nicht validiert. Dadurch kann jeder (eine Authentifizierung ist nicht erforderlich) beliebige Dateien lesen. Da die Anwendung standardmäßig mit den höchsten Rechten (root/NT_AUTHORITY SYSTEM) ausgeführt wird, sind Angreifer in der Lage, kritische Dateien wie <code>/etc/shadow</code> zu erlangen.</p>
+<p>Die Anwendung ist anfällig für "Unauthenticated Arbitrary File Read ", also das auslesen von beliebigen Dateien. Dies betrifft sowohl den Agent, der auf Linux als auch den, der auf Windows installiert ist. Der Parameter Pfad im Parameter <code>filename</code> wird nicht validiert. Dadurch kann jeder (eine Authentifizierung ist nicht erforderlich) beliebige Dateien lesen. Da die Anwendung standardmäßig mit den höchsten Rechten (root/NT_AUTHORITY SYSTEM) ausgeführt wird, sind Angreifer in der Lage, kritische Dateien wie <code>/etc/shadow</code> zu erlangen.</p>
 
 <h4 id="PoC_2">Proof of Concept</h4>
 
@@ -249,11 +249,11 @@ Connection: close
 
 <h4 id="solution_2">Behebung</h4>
 
-<p>Da uns bis heute kein offizieller Fix bekannt ist, empfehlen wir den Zugriff auf den Agenten-Port (Standard 5015) mithilfe eines Whitelist-Ansatzes einzuschränken.</p>
+<p>Da mir bis heute kein offizieller Fix bekannt ist, empfehle ich den Zugriff auf den Agent-Port (Standard 5015) mithilfe eines Whitelist-Ansatzes einzuschränken.</p>
 
 <h4 id="CVSS_2">CVSS</h4>
 
-<p>DriveByte hat die folgende CVSS 4.0 Basismetrik errechnet:</p>
+<p>Ich habe die folgende CVSS 4.0 Basismetrik errechnet:</p>
 
 <p>8.7 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N)</p>
 
@@ -261,7 +261,7 @@ Connection: close
 
 <h4 id="desc_3">Beschreibung</h4>
 
-<p>Die Anwendung ist anfällig für eine authentifizierte willkürliche Dateilöschung. Dies betrifft sowohl den Agenten, der auf Linux als auch den, der auf Windows installiert ist. Da die Anwendung standardmäßig mit den höchsten Rechten (root/NT_AUTHORITY SYSTEM) ausgeführt wird, sind Angreifer in der Lage, kritische Dateien wie <code>/etc/shadow</code> etc. zu löschen.</p>
+<p>Die Anwendung ist anfällig für eine authentifizierte willkürliche Dateilöschung. Dies betrifft sowohl den Agent, der auf Linux als auch den, der auf Windows installiert ist. Da die Anwendung standardmäßig mit den höchsten Rechten (root/NT_AUTHORITY SYSTEM) ausgeführt wird, sind Angreifer in der Lage, kritische Dateien wie <code>/etc/shadow</code> etc. zu löschen.</p>
 
 <h4 id="PoC_3">Proof of Concept</h4>
 
@@ -281,11 +281,11 @@ Referer: https://192.168.40.141:5015/agent?context=5815&amp;r=logs&amp;request=d
 
 <h4 id="solution_3">Behebung</h4>
 
-<p>Da uns auch hier bis heute kein offizieller Fix bekannt ist, empfehlen wir den Zugriff auf den Agenten-Port (Standard 5015) mithilfe eines Whitelist-Ansatzes einzuschränken.</p>
+<p>Da mir auch hier bis heute kein offizieller Fix bekannt ist, empfehle ich den Zugriff auf den Agenten-Port (Standard 5015) mithilfe eines Whitelist-Ansatzes einzuschränken.</p>
 
 <h4 id="CVSS_3">CVSS</h4>
 
-<p>DriveByte hat die folgende CVSS 4.0 Basismetrik errechnet:</p>
+<p>Ich habe die folgende CVSS 4.0 Basismetrik errechnet:</p>
 
 <p>7.1 (CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:N/VI:L/VA:H/SC:N/SI:N/SA:N)</p>
 
@@ -325,17 +325,17 @@ Wie wir sehen können, antwortet der Server mit dem Inhalt der angefragten Datei
 
 <h4 id="solution_4">Behebung</h4>
 
-<p>Auch bei dieser Schwachstelle ist uns bis heute kein offizieller Fix bekannt. Wir empfehlen daher auch hier den Zugriff auf den Agenten-Port (Standard 5015) mithilfe eines Whitelist-Ansatzes einzuschränken.</p>
+<p>Auch bei dieser Schwachstelle ist mir bis heute kein offizieller Fix bekannt. Ich empfehlen daher auch hier den Zugriff auf den Agenten-Port (Standard 5015) mithilfe eines Whitelist-Ansatzes einzuschränken.</p>
 
 <h4 id="CVSS_4">CVSS</h4>
 
-<p>DriveByte hat die folgende CVSS 4.0 Basismetrik errechnet:</p>
+<p>Ich habe die folgende CVSS 4.0 Basismetrik errechnet:</p>
 
 <p>8.7 (CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N)</p>
 
 <h2 id="Danke">Danksagungen</h2>
 
-<p>Unser besonderer Dank geht an das BSI-Team für die Unterstützung auf unserem Weg und für die Bemühungen, den Hersteller in den Fall einzubeziehen.</p>
+<p>Mein besonderer Dank geht an das BSI-Team für die Unterstützung auf meinem Weg und für die Bemühungen, den Hersteller in den Fall einzubeziehen.</p>
 
 <h2 id="Timeline">Disclosure Timeline</h2>
 
@@ -346,22 +346,15 @@ Wie wir sehen können, antwortet der Server mit dem Inhalt der angefragten Datei
 2023/11/08 - Nachricht vom BSI, dass sie bisher keine Reaktion des Herstellers erhalten konnten<br />
 2024/01/11 - Nachricht vom BSI, dass sie bisher keine Reaktion des Herstellers erhalten konnten und dass sie CERT/CC / CISA einbezogen haben<br />
 2024/02/23 - Nachricht vom BSI, dass sie bisher keine Reaktion des Herstellers erhalten konnten und dass auch CISA weiterhin versucht<br />
-2024/02/26 - DriveByte informiert das BSI, dass wir 3 weitere Schwachstellen in der Software gefunden haben, jedoch nicht mehr die neueste Version haben und gerne die neueste Version erhalten würden<br />
+2024/02/26 - DriveByte (ehemalige Firma) informiert das BSI, dass wir 3 weitere Schwachstellen in der Software gefunden haben, jedoch nicht mehr die neueste Version haben und gerne die neueste Version erhalten würden<br />
 2024/05/15 - BSI bewertet den verantwortungsvollen Offenlegungsfall als "gescheitert", da sie keinen Kontakt zum Hersteller herstellen konnten<br />
 2024/05/21 - BSI bietet Hilfe beim Erhalt von CVEs für die Bugs über ENISA an<br />
 2024/07/16 - Offizielle Meldung der weiteren Schwachstellen<br />
 2024/07/25 - Hersteller kontaktiert das BSI und erwähnt die Behebung der ursprünglich gemeldeten Schwachstelle<br />
 2024/07/25 - Antwort des BSI, dass sie erneut versuchen, die Schwachstellen an den Hersteller weiterzuleiten, da jetzt Kontakt besteht<br />
 2024/08/05 - BSI informiert uns, dass der Hersteller keine CVEs ausstellen wird und dass sie den Bericht an die ENISA weiterleiten<br />
-2024/08/06 - Hersteller kontaktiert DriveByte, um herauszufinden, was bei der Meldung schiefgelaufen ist<br />
+2024/08/06 - Hersteller kontaktiert DriveByte (ehemalige Firma), um herauszufinden, was bei der Meldung schiefgelaufen ist<br />
 2024/09/10 - ENISA sendet CVEs<br />
-2024/08/06 - Hersteller kontaktiert DriveByte, um herauszufinden, was bei der Meldung schiefgelaufen ist<br />
 2024/10/23 - Veröffentlichung des Advisory</p>
-<!--
-<script>
-    hljs.registerLanguage('http', window.hljsDefineHttp);
-    hljs.highlightAll();
-</script>
--->
 </body>
 </html>
