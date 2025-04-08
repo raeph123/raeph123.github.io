@@ -122,25 +122,25 @@ Nach einiger Zeit, in der ich stetig versucht habe Informationen vom Hersteller 
 <p>Fangen wir mit den Einstellungen an. Für meine Analyse starten wir mit den folgenden Einstellungen. Diese sind nahezu identisch mit denen, die der Kunde gesetzt hatte. Allerdings habe ich hier noch die "Edge Lockdown" Option aktiviert.
 Inteset kategorisiert die Einstellungen in verschiedene Tabs. Starten wir mit <code>System Lockdown - Local Level</code>.</p>
 
-<p><img src=".attachments/LocalLevelLockdown.png" alt="LocalLevelLockdown.png" /></p>
+<p><img src="attachments/LocalLevelLockdown.png" alt="LocalLevelLockdown.png" /></p>
 
 <p>Oh, und falls ihr dachtet, das Microsoft Edge geblockt wird, weil der Haken bei Edge nicht gesetzt ist - Das ist nicht der Fall. Kein Häkchen heißt für "Secure Lockdown", dass gar keine Sicherheitsmaßnahmen für Edge gesetzt sind.
 Das wäre direkt Game-Over. Wir hätten dann einfach die Möglichkeit aus edge heraus eine PowerShell zu öffnen, den "legacy mode" zu aktivieren und damit Code Execution zu erlangen, Files zu durchsuchen, schädliche Dateien herunterzuladen und auszuführen usw. 
 Aus diesem Grund hielt ich es für angebracht, den "Lockdown" für Edge auch zu aktivieren.
 Wie ihr allerdings später sehen werdet, habe ich Wege gefunden schädliche Aktionen auszuführen. Trotz vollem Edge "Lockdown", wie er unten dargestellt ist.</p>
 
-<p><img src=".attachments/EdgeLockDown1.png" alt="EdgeLockDown1.png" /></p>
+<p><img src="attachments/EdgeLockDown1.png" alt="EdgeLockDown1.png" /></p>
 
-<p><img src=".attachments/EdgeLockDown2.png" alt="EdgeLockDown2.png" /></p>
+<p><img src="attachments/EdgeLockDown2.png" alt="EdgeLockDown2.png" /></p>
 
 <p>Wie wir sehen, Downloads, Erweiterungen, Einstellungen etc. sind nun alle geblockt. Fullscreen nicht zu erlauben wäre nicht zwingend notwendig gewesen. Aber was solls ;-)</p>
 
 <p>Als nächstes, schauen wir uns die <code>System Lockdown - Machine Level</code> Einstellungen an. Wie ihr seht, sind wir auch hier so restriktiv wie möglich.
 Außerdem aktivieren wir die <code>Circle Dock</code> Option. Diese erlaubt uns, nur den Circle Dock auf dem abgesicherten Bildschirm anzuzeigen (keine Windows Task-Leiste), mit nur den Programmen, die wir erlauben möchten.</p>
 
-<p><img src=".attachments/MachineLevelLockdown.png" alt="MachineLevelLockdown.png" /></p>
+<p><img src="attachments/MachineLevelLockdown.png" alt="MachineLevelLockdown.png" /></p>
 
-<p><img src=".attachments/CircleDock.png" alt="CircleDock.png" /></p>
+<p><img src="attachments/CircleDock.png" alt="CircleDock.png" /></p>
 
 <p>Es gibt auch noch weitere Optionen wie <code>Log off / Restart</code>, diese dienen aber nur dazu das System neu zu starten und zu definieren nach welchem Zeitraum ein User ausgeloggt wird (ja, genau wie der Name es sagt...).
 Wir könnten zusätzlich noch Hintergrundapplikationen konfigurieren. Dies würde dann definieren, welche Prozesse laufen dürfen. Da diese Einstellung von unserem Kunden nicht gesetzt war, habe ich sie auch weder gesetzt noch ausführlich getestet. Was man allerdings wissen sollte, ist das mit diesen Einstellungen einfach <strong>alles</strong> laufen darf.</p>
@@ -153,7 +153,7 @@ Wir könnten zusätzlich noch Hintergrundapplikationen konfigurieren. Dies würd
 
 <p>Ich weiß, was ihr jetzt denkt! Aaaah ok, wir beenden einfach den Programmstart in der CMD und können uns dann den Terminal-Zugriff zunutze machen. Ganz einfach.</p>
 
-<p><img src=".attachments/no.png" alt="no.png" /></p>
+<p><img src="attachments/no.png" alt="no.png" /></p>
 
 <p>Aber nein, ganz so einfach war es nicht. Wenn der Startvorgang des Programms in der CMD abgebrochen wurde, spuckte die CMD eine "Zugriff verweigert" Benachrichtigung. Es gibt dennoch Möglichkeiten. Wenn es darum geht, Lockdowns zu umgehen, ist es immer wichtig alle möglichen Menüs etc. in Augenschein zu nehmen, um eventuell ein Weg in den Explorer oder ähnliches zu finden.
 In diesem Fall war es mit der Hilfe von CMD möglich, einen Weg zu finden um den Edge Browser zu öffnen (Ja ich weiß, die Überschrift hatte das bereits verraten). </p>
@@ -161,19 +161,19 @@ In diesem Fall war es mit der Hilfe von CMD möglich, einen Weg zu finden um den
 <p>Wie bereits angemerkt, wurden einige Angriffsoberflächen recht effektiv abgeschaltet. So beispielsweise "Hilfe"-Menüs und andere Standardwege die jeder Analyst als erstes überprüft. Allerdings trifft das auf das Kontextmenü von CMD nicht zu. 
 Daher konnte ich mit einem Rechtsklick in die Menüzeile der CMD zugriff auf deren "Eigenschaften" gelangen.</p>
 
-<p><img src=".attachments/bat_properties.png" alt="bat_properties.png" /></p>
+<p><img src="attachments/bat_properties.png" alt="bat_properties.png" /></p>
 
 <p>Danach gibt es hier mehrere Möglichkeiten, den als Standard eingestellten Webbrowser zu starten. In unserem Fall war das Edge.</p>
 
 <p>Die ersten zwei Möglichkeiten sind im Tab <code>Options</code> zu finden. Wenn man die Links in "Learn more about legacy console mode" oder "Find out more about new console features" klickt, öffnet sich der Edge Browser und ruft die entsprechenden Seiten auf.</p>
 
-<p><img src=".attachments/bat_options.png" alt="bat_options.png" /></p>
+<p><img src="attachments/bat_options.png" alt="bat_options.png" /></p>
 
 <p>Das gleiche gilt für den <code>Terminal</code> Tab. Wir können mit dem Link in "Find out more about experimental terminal settings" den Edge Browser starten.</p>
 
-<p><img src=".attachments/bat_terminal.png" alt="bat_terminal.png" /></p>
+<p><img src="attachments/bat_terminal.png" alt="bat_terminal.png" /></p>
 
-<p><img src=".attachments/Escape3.png" alt="Escape3.png" /></p>
+<p><img src="attachments/Escape3.png" alt="Escape3.png" /></p>
 
 <p>Und schon haben wir Zugriff auf den Browser.</p>
 
@@ -189,9 +189,9 @@ Insgesamt bin ich der Meinung, dass das Öffnen von Edge geblockt werden sollte,
 <p>Die zweite Schwachstelle in "Inteset Secure Lockdown Multi Application Edition" ist dass wir, sobald wir Zugriff auf Edge haben, beliebigen Code ausführen können.
 Die Software blockiert einige Dinge, wie beispielsweise den Zugriff auf die Browsereinstellungen, Downloads etc.</p>
 
-<p><img src=".attachments/blocked_downloads.png" alt="blocked_downloads.png" />
-<img src=".attachments/blocked_settigns.png" alt="blocked_settigns.png" />
-<img src=".attachments/blocked_file.png" alt="blocked_file.png" /></p>
+<p><img src="attachments/blocked_downloads.png" alt="blocked_downloads.png" />
+<img src="attachments/blocked_settigns.png" alt="blocked_settigns.png" />
+<img src="attachments/blocked_file.png" alt="blocked_file.png" /></p>
 
 <p>Was allerdings nicht blockiert wird, ist der Download und die Ausführung von sogenannten "ClickOnce" Anwendungen.</p>
 
@@ -228,19 +228,19 @@ Klar, wir könnten hier etwas deutlich ausgefeilteres schreiben. Aber hey, das e
 
 <p>Jetzt können einfach die Anwendung hochladen, und sie auf unserem Zielsystem ausführen, um unseren Code zu starten.</p>
 
-<p><img src=".attachments/Click_Once1.png" alt="ClickOnce1.png" /></p>
+<p><img src="attachments/Click_Once1.png" alt="ClickOnce1.png" /></p>
 
 <p>Bis die Datei tatsächlich ausgeführt wird, müssen wir uns durch ein paar Dialoge klicken. Für eine Phishingkampagne wäre das also etwas aufwändig (zumindest, solange wir kein Zertifikat haben, mit dem wir unsere Anwendung signieren können. Oder solange wir nicht anderweitig etwas mehr Aufwand betreiben. Mehr dazu im obigen Blogpost von SpecterOps. Ernsthaft, ich empfehle wirklich ihn durchzulesen). Für unser Szenario ist das allerdings absolut kein Problem. Da wir physisch am System sind (deswegen ja der Kiosk Modus) und uns einfach selbst durch die Dialoge klicken können.</p>
 
-<p><img src=".attachments/Click_Once2_5.png" alt="ClickOnce2.5.png" /></p>
+<p><img src="attachments/Click_Once2_5.png" alt="ClickOnce2.5.png" /></p>
 
-<p><img src=".attachments/Click_Once4.png" alt="ClickOnce4.png" /></p>
+<p><img src="attachments/Click_Once4.png" alt="ClickOnce4.png" /></p>
 
-<p><img src=".attachments/Click_Once3.png" alt="ClickOnce3.png" /></p>
+<p><img src="attachments/Click_Once3.png" alt="ClickOnce3.png" /></p>
 
 <p>Uuuuund nachdem wir "Install" klicken, wird unser Code auf dem System ausgeführt und unsere PowerShell gestartet.</p>
 
-<p><img src=".attachments/Click_Once_Exec1_redacted.png" alt="ClickOnceExec1_redacted.png" /></p>
+<p><img src="attachments/Click_Once_Exec1_redacted.png" alt="ClickOnceExec1_redacted.png" /></p>
 
 <p>Herzlichen Glückwunsch, wir können also jeden Code ausführen, den wir ausführen wollen.</p>
 
@@ -271,7 +271,7 @@ Ansonsten gibt es zahlreiche Informationen zu Gruppenrichtlinien, mit denen Powe
 
 <p>Wie wir bereits in den Screenshots im Kapitel ClickOnce gesehen haben, sind <code>file</code> Links nicht zugelassen.</p>
 
-<p><img src=".attachments/File_Read.png" alt="FileRead.png" /></p>
+<p><img src="attachments/File_Read.png" alt="FileRead.png" /></p>
 
 <p>Das kann aber mit sogenannten <code>UNCPaths</code> wie <code>\\127.0.0.1\C$</code> umgangen werden. Somit können wir das Dateisystem zugreifen und alle Dateien lesen, auf die der Benutzer unter dem "Secure Lockdown" ausgeführt wird, Berechtigungen hat. </p>
 
@@ -285,8 +285,8 @@ Ansonsten gibt es zahlreiche Informationen zu Gruppenrichtlinien, mit denen Powe
 
 <p>In unserem Test erwies sich das als effektiv.</p>
 
-<p><img src=".attachments/EdgeLockDown_whitelist.png" alt="EdgeLockDown_whitelist.png" />
-<img src=".attachments/WhiteList_FileRead.png" alt="WhiteList_FileRead.png" /></p>
+<p><img src="attachments/EdgeLockDown_whitelist.png" alt="EdgeLockDown_whitelist.png" />
+<img src="attachments/WhiteList_FileRead.png" alt="WhiteList_FileRead.png" /></p>
 
 <p>Das konfigurieren einer Allowlist kann (wenn sie minimalistisch gehalten und gepflegt wird) zudem die Angriffsoberfläche für den ClickOnce Vektor verringern.</p>
 
