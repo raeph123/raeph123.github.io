@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Sicherheitsanalyse Avid NEXIS Agent</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background-color: #3d3a39;
+      color: white;
+    }
+    h1, h2, h3, h4 {
+      color: white;
+    }
+    pre {
+      background: #3d3a39;
+      padding: 1em;
+      overflow-x: auto;
+    }
+    blockquote {
+      border-left: 4px solid #ccc;
+      margin: 1em 0;
+      padding: 0.5em 1em;
+      background: #f2f2f2;
+    }
+    a {
+      color: white;
+    }
+    #toc_container {
+        background: #686564 none repeat scroll 0 0;
+        border: 1px solid #aaa;
+        display: table;
+        font-size: 95%;
+        margin-bottom: 1em;
+        padding: 20px;
+        width: auto;
+    }
+
+    .toc_title {
+        font-weight: 700;
+        text-align: center;
+    }
+
+    #toc_container li, #toc_container ul, #toc_container ul li{
+        list-style: outside none none !important;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/http.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      hljs.highlightAll();
+    });
+  </script>   
+</head>
+<body>
+
+    <h1>Inteset Secure Lockdown Multi Application Edition - Vulnerabilities and Hardening Measures</h1>
+
+    <p><strong>TL;DR:</strong> Inteset Secure Lockdown MAE is prone to some vulnerabilities, that should be known by users to mitigate their risks.</p>
+
+    <p><strong>Disclaimer:</strong> This blog post was originally published on the DriveByte blog. However, as the company is being liquidated, I have decided to move my old blog posts so that they are not lost.</p>
+    
+    <h2>Introduction</h2>
+    
+    <p>A while ago, I stumbled across a kiosk mode application during an assessment. The team was able to find some issues within the kiosk mode, that will be addressed in the following article. While it is my personal opinion, that these issues should be addressed by the vendor, I still list some mitigating measures that can be taken by users to at least reduce the risk while using the product. Generally speaking, if you can, you should avoid relying on a kiosk mode for the security of your applications. 
+    As always, I tried addressing the vulnerabilities with the vendor responsibly, within the context of a coordinated vulnerability disclosure. However, after initial contact and sending a description of the vulnerabilities; Radio Silence! 
+    Over time, still trying to address and disclose the issues with the vendor, I reported the issues to <a href="https://www.kb.cert.org/vuls/">CERT/CC's</a> VINCE. 
+    Sadly they have not been able to get in touch with Inteset as well. Therefore, in coordination with CERT/CC, I disclose my findings in this article.</p>
+    
+    <h2>Description</h2>
+    
+    <p>Inteset itself describes "Secure Lockdown - Multi Application Edition" as follows "<a href="https://www.inteset.com/secure-lockdown-multi-application-edition">Secure Lockdown - Multi Application Edition is a Windows Lockdown Utility that Allows Access to Only Desired Applications from a Highly Customizable Menu</a>". While the solutions seemed quite effective on some edges, I found some vulnerabilities within the software, that should be taken care of by the vendor.
+    So let's take a look at the findings.</p>
+    
+    <h2>Affected Product</h2>
+    
+    <p>In its "About"-Tab Secure Lockdown only states "Version 2.0". However, there is a registry key <code>HKCU:\SOFTWARE\Inteset\</code> that indicates the version is 2.00.219.
+    During the original assessment, "Secure Lockdown - Multi Application Edition 2.00.219" was the most recent and assessed version as well. By the time of writing of this blogpost, the version had not changed.</p>
+    
+    <p><img src=".attachments/SLBuild_psh.png" alt="SLBuild_psh.png" /></p>
+    
+    <h2>The Setup</h2>
+    
+    <p>Let's start with the setup. For my assessment I started with the following options, that are almost similar to what our customer had configured, with the difference, that I enabled the Microsoft Edge options here.
+    Inteset offers some categories for their settings. Let's start with the <code>System Lockdown - Local Level</code>.</p>
+    
+    <p><img src=".attachments/LocalLevelLockdown.png" alt="LocalLevelLockdown.png" /></p>
+    
+    <p>Oh, and if you think that Edge is blocked in general, if it's box is unchecked - it isn't. Unchecked means, that there is no protection for Edge at all. 
+    This would mean instant Game-Over, as we'd have a lots of options like just opening PowerShell, enabling legacy mode and ActiveX for code execution, browsing files, downloading and executing malicious files etc.
+    That's why we chose to "Lockdown" Edge as well.
+    However, as you will see later, there are still some attack vectors, even with the full Edge lockdown mode as shown </p>
+    
+    <p><img src=".attachments/EdgeLockDown1.png" alt="EdgeLockDown1.png" /></p>
+    
+    <p><img src=".attachments/EdgeLockDown2.png" alt="EdgeLockDown2.png" /></p>
+    
+    <p>As we can see: downloads, extensions, settings etc. are all blocked now. It wouldn't have been necessary to prevent fullscreen. But that's not the point here.</p>
+    
+    <p>Next we can take a look at the <code>System Lockdown - Machine Level</code> options. As you can see we are also denying as much as possible. 
+    Further we activate the <code>Circle Dock</code> option. This allows us to have just the Circle Dock on screen and no other options (no Windows Taskbar) besides the ones we want to give to the user.</p>
+    
+    <p><img src=".attachments/MachineLevelLockdown.png" alt="MachineLevelLockdown.png" /></p>
+    
+    <p><img src=".attachments/CircleDock.png" alt="CircleDock.png" /></p>
+    
+    <p>There are also other options, like <code>Log off / Restart</code>, but this is just if the system should restart and the time after which a user will get logged off (yes, as the name says... I know).
+    Further we could define background apps, that are allowed to run. In my case I did not test anything of this, as it was not configured by the customer. What is to be stated here is, that in this mode <strong>EVERYTHING</strong> can run in the background.</p>
+    
+    <p>Alright, now that we know how the setup looks like, let's see how we can get access to an Edge browser.</p>
+    
+    <h2>Getting Access to Edge</h2>
+    
+    <p>So this one has a catch. Most lockdowns or kiosk modes I've seen so far have been quite easy to bypass. In this case however, the escape relies on a precondition. The application started from the <code>Circle Dock</code> has to call <code>cmd.exe</code>. In the case of the customer, they started their program as a <code>.bat</code> file.</p>
+    
+    <p>I know what you're thinking right now. Aaaah ok, just cancel the task in the CMD and you can access it. Easy as cake.</p>
+    
+    <p><img src=".attachments/no.png" alt="no.png" /></p>
+    
+    <p>But no. It was not as easy as that. Cancelling the running task did lead to an "Access Denied" error. However, there are other methods. When bypassing lockdowns, it is always important to check for all kinds of menus and stuff to see if we can escape into an explorer etc. 
+    In my case, with the help of CMD. I found a way to get access to Edge (yes, exactly as the heading states it. Surprise surprise).</p>
+    
+    <p>So as mentioned already, a lot of things have been locked down quite well. Help menus and other standard ways that every security person checks first. However, the context menu of CMD was not. 
+    Therefore I could just right click the menu bar of CMD and then access the properties.</p>
+    
+    <p><img src=".attachments/bat_properties.png" alt="bat_properties.png" /></p>
+    
+    <p>Afterwards, the properties offer some possibilities to start the default web browser, which was MS Edge in my case. </p>
+    
+    <p>The first two opportunities are in the <code>Options</code>-tab. By clicking the links in "Learn more about legacy console mode" or "Find out more about new console features", MS Edge opens with the help/info pages about those topics.
+    <img src=".attachments/bat_options.png" alt="bat_options.png" /></p>
+    
+    <p>The same goes for the "Terminal"-tab. Here we can "Find out more about experimental terminal settings". And we can do this with the default browser of course.</p>
+    
+    <p><img src=".attachments/bat_terminal.png" alt="bat_terminal.png" /></p>
+    
+    <p><img src=".attachments/Escape3.png" alt="Escape3.png" /></p>
+    
+    <p>And now we have access to the Browser. </p>
+    
+    <h3>Solution</h3>
+    
+    <p>How can we prevent this? Well, the easiest of course is avoiding to use <code>.bat</code> files to start your programs within Inteset. On the other hand, the process whitelisting function could prevent things like this from happening, but I did not test this. 
+    Altogether I think it should be blocked by the software itself and not left to the user to fix. But that goes for the other issues mentioned in this blogpost as well. </p>
+    
+    <p>So now we have access to Edge. But what now? What to do with that? Can we download and execute malicious files? Let's see.</p>
+    
+    <h2>Execution of ClickOnce Applications</h2>
+    
+    <p>The second issue I have with "Inteset Secure Lockdown Multi Application Edition", is that once we got access to Edge, we get code execution.
+    Even though the software is blocking a lot of things, like browser settings, downloads etc.</p>
+    
+    <p><img src=".attachments/blocked_downloads.png" alt="blocked_downloads.png" />
+    <img src=".attachments/blocked_settigns.png" alt="blocked_settigns.png" />
+    <img src=".attachments/blocked_file.png" alt="blocked_file.png" /></p>
+    
+    <p>It does not block the download and execution of so called "ClickOnce" applications. </p>
+    
+    <p>What is ClickOnce? Well, here's a description from Microsoft.</p>
+    
+    <p>"ClickOnce is a deployment technology that enables you to create self-updating Windows-based applications that can be installed and run with minimal user interaction" - <a href="https://learn.microsoft.com/en-us/visualstudio/deployment/clickonce-security-and-deployment?view=vs-2022">MSDN</a></p>
+    
+    <p>ClickOnce can be abused for a lot of things. Check out the amazing <a href="https://posts.specterops.io/less-smartscreen-more-caffeine-ab-using-clickonce-for-trusted-code-execution-1446ea8051c5">blogpost</a> about this from SpecterOps, which is what I did during this assessment as well (there was also a webinar about it from SpecterOps just a week before our assessment. But I couldn't make it and thought "aah, I will probably never need it anyways"... yeeeeah... I regretted that).</p>
+    
+    <p>In my case, as there is no deny list for websites, we can just write a simple ClickOnce application and run it. </p>
+    
+    <p>```csharp
+    using System;
+    using System.Diagnostics;</p>
+    
+    <p>namespace ClickOnceTest
+    {
+        internal class Program
+        {
+            static void Main(string[] args)
+            {
+                var processStartInfo = new ProcessStartInfo();
+                processStartInfo.FileName = "powershell.exe";</p>
+    
+    <pre><code>        using var process = new Process();
+            process.StartInfo = processStartInfo;
+            process.Start();
+        }
+    }
+    </code></pre>
+    
+    <p>}
+    ```</p>
+    
+    <p>Sure, we could write much more sophisticated stuff here. But I'm lazy ¯\<em>(ツ)</em>/¯.</p>
+    
+    <p>Afterwards we can just host the ClickOnce on our server and download/execute it on the target machine for code execution.</p>
+    
+    <p><img src=".attachments/Click_Once1.png" alt="ClickOnce1.png" /></p>
+    
+    <p>We have to click a few times during this overall process. So for a phishing campaign this would be bit of a hassle (as long as we cannot sign it or do bit more sophisticated stuff like the awesome team from SpecterOps. Seriously, check out the mentioned blogpost). But for our scenario, in which we are the clicking user on a locked down system ourselves, this is no hassle.</p>
+    
+    <p><img src=".attachments/Click_Once2_5.png" alt="ClickOnce2.5.png" /></p>
+    
+    <p><img src=".attachments/Click_Once4.png" alt="ClickOnce4.png" /></p>
+    
+    <p><img src=".attachments/Click_Once3.png" alt="ClickOnce3.png" /></p>
+    
+    <p>Aaaaand after clicking "Install" we get our code executed and launch (in our case) our powershell.</p>
+    
+    <p><img src=".attachments/Click_Once_Exec1_redacted.png" alt="ClickOnceExec1_redacted.png" /></p>
+    
+    <p>Congratulations, we can now execute arbitrary code.</p>
+    
+    <h3>CVE Information</h3>
+    
+    <p>MITRE assigned <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=2024-29500">CVE-2024-29500</a> for this issue.</p>
+    
+    <h3>Solution</h3>
+    
+    <p>Again, I think that the solution should be automated by the vendor. Or at least be added as an option within the lockdown settings. 
+    But till then, you can disable ClickOnce executions with the registry key settings in <code>\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\Security\TrustManager\</code>. For more information about the remediation you can also refer to <a href="https://learn.microsoft.com/en-us/visualstudio/deployment/how-to-configure-the-clickonce-trust-prompt-behavior?view=vs-2022&tabs=csharp">the MSDN article about this topic</a></p>
+    
+    <h2>No Restriction of Powershell</h2>
+    
+    <p>Who was paying attention in the last chapter probably already recognized it. So I make this one short. 
+    If you think CMD is a problem and you block it, you should block powershell as well. I know this isn't that easy, but for a "Secure Lockdown", this definitely should be considered.</p>
+    
+    <p>I had to combine this vulnerability with the access to Edge and the execution of ClickOnce applications (which led us to having code execution anyways). Still powershell access should just get blocked.</p>
+    
+    <h3>Solution</h3>
+    
+    <p>In my opinion, this one really is up to inteset.
+    Besides that, there is plenty information out there regarding group policies to block powershell and powershell_ise.</p>
+    
+    <h2>Local File Read</h2>
+    
+    <p>There's also another vulnerability that we can abuse as soon as we have access to a browser. While one can argue about if other topics are software or user configuration issues, this one is a bug for sure.</p>
+    
+    <p>We could see on screenshots in the ClickOnce chapter, that <code>file</code> links are not allowed in "inteset Secure Lockdown Multi Application Edition".</p>
+    
+    <p><img src=".attachments/File_Read.png" alt="FileRead.png" /></p>
+    
+    <p>However, this can be bypassed by using <code>UNCPaths</code> like <code>\\127.0.0.1\C$</code>. This way we can access the filesystem and read any file, the useraccount which runs Inteset has access to.</p>
+    
+    <h3>CVE Information</h3>
+    
+    <p>MITRE assigned <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=2024-29502">CVE-2024-29502</a> for this issue.</p>
+    
+    <h3>Solution</h3>
+    
+    <p>Besides hoping for Inteset fixing those issues, if it is possible for you, I suggest to use a whitelist to restrict the access to only pages you want people to access.</p>
+    
+    <p>In my test, this proved effective against this attack.</p>
+    
+    <p><img src=".attachments/EdgeLockDown_whitelist.png" alt="EdgeLockDown_whitelist.png" /></p>
+    
+    <p><img src=".attachments/WhiteList_FileRead.png" alt="WhiteList_FileRead.png" /></p>
+    
+    <p>Using an allowlist will also (if kept clean and minimalistic) reduce your attack surface for the ClickOnce attack vector.</p>
+    
+    <h2>Closing Statement</h2>
+    
+    <p>It's open for discussion, if these issues are bugs that have to be patched by the vendor. In my opinion, these are serious attack vectors that most users probably don't know of (how many people do you know that restricted ClickOnce execution?), therefore I believe the manufacturer is responsible for providing a fix for this issues.
+    We've experienced in a live environment how we could get from locked down to code execution with above vulnerabilities. We therefore think, that these vulnerabilities should be taken seriously.
+    As you've seen in my previous blogposts, I am usually very interested to disclose issues in close cooperation with the vendor. Sadly this did not work this time. While the vendor responded to my initial contact, I never again got any response. I then involved CERT/CC, who in turn also tried to reach the vendor.</p>
+    
+    <p>As we both were unsuccessful, I am now disclosing the vulnerabilities in tight coordination with CERT/CC and in accordance with requirements of the responsible disclosure of vulnerabilities.
+    I believe that these issues should be known to users and defenders as they are able to reduce the attack possibilities drastically or even remediate some of them completely.</p>
+    
+    <h2>Acknowlegdements</h2>
+    
+    <p>Special thanks goes to the CERT/CC team for supporting me along the way and trying their best to get the vendor to be involved in the case.</p>
+    
+    <h2>Disclosure Timeline</h2>
+    
+    <p>2023/09/29 - Initial contact with the question where to report the bugs<br />
+    2023/09/29 - Vendor response to just send it to the support mail address<br />
+    2023/10/04 - Initial Bug Report<br />
+    2023/10/30 - DriveByte requested the vendor for updates<br />
+    2023/11/24 - DriveByte requested the vendor for updates<br />
+    2023/12/08 - Case opened in CERT/CC's VINCE<br />
+    2024/01/09 - DriveByte requested the vendor for updates<br />
+    2024/01/26 - CERT/CC jumps in<br />
+    2024/02/13 - CERT/CC tells us to prepare for public release on 10th of march<br />
+    2024/03/08 - Final confirmation for release on the 10th of march until further notice<br />
+    2024/03/14 - Final release<br />
+    2024/04/24 - Updated CVE information</p>
+
+</body>
+</html>
