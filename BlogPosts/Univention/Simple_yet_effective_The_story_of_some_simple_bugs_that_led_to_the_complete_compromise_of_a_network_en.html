@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple yet effective. The story of some simple bugs that led to the complete compromise of a network</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background-color: #3d3a39;
+      color: white;
+    }
+    h1, h2, h3, h4 {
+      color: white;
+    }
+    pre {
+      background: #3d3a39;
+      padding: 1em;
+      overflow-x: auto;
+    }
+    blockquote {
+      border-left: 4px solid #ccc;
+      margin: 1em 0;
+      padding: 0.5em 1em;
+      background: #f2f2f2;
+    }
+    a {
+      color: white;
+    }
+    #toc_container {
+        background: #686564 none repeat scroll 0 0;
+        border: 1px solid #aaa;
+        display: table;
+        font-size: 95%;
+        margin-bottom: 1em;
+        padding: 20px;
+        width: auto;
+    }
+
+    .toc_title {
+        font-weight: 700;
+        text-align: center;
+    }
+
+    #toc_container li, #toc_container ul, #toc_container ul li{
+        list-style: outside none none !important;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/http.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      hljs.highlightAll();
+    });
+  </script>   
+</head>
+<body>
+
+<h1>Simple yet effective. The story of some simple bugs that led to the complete compromise of a network</h1>
+
+<p><strong>TL;DR:</strong><p> By spying on the process creation of a UCS connected server with extensive permissions, it was possible to gather a large amount of LDAP data. This data includes different credentials and other authentication information. The vendor responded extremely professional and fixed the issues very quickly. He did not only fix the script where I found the issue, but also checked their code base for similar problems and fixed them as well.</p>
+
+<p><strong>Disclaimer:</strong> This blog post was originally published on the DriveByte blog. However, as the company is being liquidated, I have decided to move my old blog posts so that they are not lost.</p>
+
+<div id="toc_container">
+    <p class="toc_title">Table of Contents</p>
+    <ul class="toc_list">
+        <li><a href="#Intro">1 Introduction</a></li>
+        <li><a href="#basics">2 Do the basics. They might reward you with some quick wins!</a></li>
+        <li><a href="#ldap">3 Exploitation attempt 1: LDAP</a></li>
+        <li><a href="#ssh">4 Exploitation attempt 2: SSH via Kerberos</a></li>
+        <li><a href="#cracking">5 Exploitation attempt 3: Hash Cracking</a></li>
+        <li><a href="#solution">6 The Fix</a></li>
+        <li><a href="#lessons_learned">7 Lessons Learned</a></li>
+        <li><a href="#timeline">Disclosure Timeline</a></li>
+    </ul>
+</div>
+
+<h2 id="Intro">Introduction</h2>
+
+<p>Recently, I was assigned to perform a penetration test for a customer. The goal was to find as many vulnerabilities as possible, as well as to determine, if an attacker would be able to compromise the customer's infrastructure. The unusual part about it? The customer's IT had no Microsoft Active Directory nor Entra ID but something similar. It was based on a product called <a href="https://www.univention.com/products/ucs/">UCS</a>, which is according to their website, a solution for "easy and centralized administration of domains".
+This was especially interesting for me, as I did not know this solution before and are of course always genuinely interested in digging into new technologies.
+The following blogpost shows a very classic and simple flaw, that had a huge impact on the customer's environment.</p>
+
+<p>Since the initial publication of this blogpost, some changes have been made. This includes especially some additional information that I received from Univention.
+
+
+<h2 id="basics">Do the basics. They might reward you with some quick wins!</h2>
+
+<p>The vulnerability analysis was performed with access to the customer's network and a user with very limited permissions (domain joined, but nothing else). While enumerating the network, I found that it is possible to access several servers with our basic user via SSH (remember, the network is mainly based on Linux machines, with only a very small number of Windows and Mac systems). This was possible due to faulty configured permissions and is not a default setting or problem of UCS, but a configuration error. I know this kind of misconfigurations from Windows Active Directory environments, where we often see permissions for “authenticated users” for SMB, RDP and so on.</p>
+
+<p>Of course, this was a very easy entry point and I started to dig into the machines to see if there is anything juicy to be found. Before trying to escalate privileges, I first checked for secrets and so on. Also, for chances of a quick win, I usually start monitoring process creations, to check for privilege escalation opportunities and other valuable information (hell yeah, full HackTheBox/OSCP style!!!). By searching through the system, I discovered the files <code>/etc/ldap.secret</code> and <code>/etc/machine.secret</code>. This sounded like relevant information. Sadly, I couldn't read the files, as they were set to read/write-only by root. Also, I didn't know what they are used for, but suspected them to be part of the Univention software. A quick search through the <a href="https://docs.software-univention.de/developer-reference/5.0/en/ldap.html">extensive Univention documentation</a> proved this assumption right. 
+After publishing this blogpost, Univention contacted me again and hinted me to <a href="https://forge.univention.org/bugzilla/show_bug.cgi?id=47455">this</a> discussion about a solution for the <code>machine.secret</code> and <code>ldap.secret</code>files. As they identified this files as a possible attack surface, they are planning to find another solution for this. So a solution is in the making.</p>
+
+<p>I played around a little with some of the Univention scripts etc., but at first did not find anything that seemed promising. So, the next step was to check for privilege escalation.
+Next to other approaches, I went back to the process creation monitoring, and there it was:
+<img src=".attachments/memberserver_password.png" alt="memberserver_password.png" /></p>
+
+<p>The script <code>check_univention_joinstatus</code> requested the LDAP database as the system account, presenting the password in cleartext. I suspected that this might be the password from the <code>/etc/machine.secret</code> file which was later confirmed.
+So, the logical next step for me was to recreate this exact command from my attacker machine. I was quite surprised to see, that this machine had permissions to basically perform <code>DCSync</code>. It's not Windows AD of course. But the machine had the permission to retrieve ALL directory objects <em>with all their attributes</em>. This includes users, with their krb5key, sambaNTPassword (NTHash), <a href="https://docs.software-univention.de/manual/5.0/en/domain-ldap/password-hashes.html">SHA512 or bcrypt hashes</a> (SHA512 is the default) as well as their password history. The following screenshot shows the output I recreated in a lab environment:</p>
+
+<p><img src=".attachments/ldapsearch_secrets.png" alt="ldapsearch_secrets.png" /></p>
+
+<p>However, this is only possible if the domain joined system has the permissions that match <code>DCSync</code>. In my test environment I joined an arbitrary machine to the domain and checked what information I get back from the "Domain Controller". So, in comparison to the information above, you can see in the screenshot below what information a usual domain joined system gets:</p>
+
+<p><img src=".attachments/noPermissions.png" alt="noPermissions.png" /></p>
+
+<h2 id="ldap">Exploitation attempt 1: LDAP</h2>
+
+<p>To exploit this issue, we can rely on <a href="https://www.n00py.io/2020/12/alternative-ways-to-pass-the-hash-pth/">n00py's awesome "Alternative ways to Pass the Hash (PtH)" blogpost</a>.
+However, a bit more research on that topic showed, that it is not as simple as I first thought. My first guess was, that we can just use the LDAP3 Python module to connect to LDAP with the NTLM hash. Unfortunately, that seems to be impossible with Univention, as it is not supporting NTLM authentication for LDAP:</p>
+
+<p><img src=".attachments/ldap3_ntlm.png" alt="ldap3_ntlm.png" /></p>
+
+<p>While my first impression was, that I am doing something wrong, <a href="https://github.com/cannatag/ldap3/issues/625#issuecomment-444452103">this</a> GitHub entry stated that the "authMethodNotSupported" message is a response from the server. It seems that Univention does not have NTLM authentication activated on the server by default (atm, I don't know if it is supported at all).</p>
+
+<p>For comparison, the SIMPLE authentication via LDAP is working fine:</p>
+
+<p><img src=".attachments/ldap3_simple.png" alt="ldap3_simple.png" /></p>
+
+<p>But the 'server.info' output is puzzling me a bit because it says that NTLM is a valid SASL mechanism, so maybe there is a workaround by using NTLM for SASL.
+Before going too deep into that path and losing a lot of time, I decided to try something else. Maybe this motivates somebody who has more knowledge in this area to dig into it. Or maybe I will come back to this later...</p>
+
+<p>Update: Here I also got some additional information from Univention. NTLM is indeed not supported. The fact that it is still shown as supported sasl mechanism is due to the OpenLDAP defaulf configuration. Univention is tracking this issue <a href="https://forge.univention.org/bugzilla/show_bug.cgi?id=43732">here</a>.</p>
+
+<h2 id="ssh">Exploitation attempt 2: SSH via Kerberos</h2>
+
+<p>As an alternative way, <a href="https://twitter.com/n00py1">\@n00py</a> suggests in his blogpost to use the NThash to sign a Kerberos ticket and then connect via SSH.
+Well, that seems easy. So I took the administrator's hash and threw it in <a href="https://github.com/fortra/impacket">Impacket's ticketer.py</a>. All information for this including the domain-sid etc. was included in the full domain dump.</p>
+
+<pre><code class="language-bash">
+ticketer.py -nthash 3B0E04870F352EDC0EF120F16431FA42 -domain-sid S-1-5-21-2228799870-4051273110-1256914315 -spn host/ucs-7427.drivebytetest.intranet -domain drivebytetest.intranet Administrator
+</code></pre>
+
+<p>Sadly, the authentication failed with the following message:</p>
+
+<p><img src=".attachments/ssh_fail.png" alt="ssh_fail.png" /></p>
+
+<p>As this is no traditional AD, I was thinking that they could use another approach to sign their Kerberos tickets. What was bugging me from the start was the <code>krb5Key</code> fields we've seen in the second screenshot.
+And again, the Univention documentation comes to our rescue. It states that "<a href="https://docs.software-univention.de/manual/5.0/en/user-management/password-management.html">The krb5Key attribute stores the Kerberos password</a>".
+Nice. But how?</p>
+
+<p>After googling for a while, I came across <a href="https://help.univention.com/t/howto-identify-type-of-kerberos-keys/16365">this</a> post in the Univention help forum. It contains some very interesting information.
+First, the <code>krb5Key</code> seems to consist of a keytype, a keyblock, in one case even an NThash and a salt string. Well, now of course I wanted to my our fingers on this <code>s4search-decode</code> script that was mentioned in this help request. I did not find it. It wasn't on the domain controller and I didn't find it in the Univention Git repo (but maybe I just went over it???, there are tons of mentions, but I didn't find the actual script. Update: The awesome people from univention pointed me to <a href="https://github.com/univention/univention-corporate-server/blob/5.0-5/services/univention-samba4/s4search-decode">this</a>. So yeah. I was indeed just not finding it somehow).
+At that point a friend with whom I discussed the topic pointed me to the following page <a href="https://docs.software-univention.de/ucs-python-api/_modules/univention/s4connector/s4/password.html">https://docs.software-univention.de/ucs-python-api/_modules/univention/s4connector/s4/password.html</a>. This file can also be found in the Univention <a href="https://github.com/univention/univention-corporate-server/blob/c7ab925e7410a8cd175ff68a11f077adccb402e1/services/univention-s4-connector/modules/univention/s4connector/s4/password.py">Git</a>.
+He pointed this out to me because of the following function:</p>
+
+<pre><code class="language-python">def extract_NThash_from_krb5key(ucs_krb5key):
+  NThash = None
+      for k in ucs_krb5key:
+          (keyblock, salt, kvno) = heimdal.asn1_decode_key(k)
+          enctype = keyblock.keytype()
+          enctype_id = enctype.toint()
+          if enctype_id == 23:
+              krb5_arcfour_hmac_md5 = keyblock.keyvalue()
+              NThash = binascii.b2a_hex(krb5_arcfour_hmac_md5)
+              break
+      return NThash
+</code></pre>
+
+<p>Nice. This seemed promising with only one downside; The dependency on <code>heimdal</code> which looked like a Univention-specific library version. I quickly recognized that this lib is installed on the Univention DC. But I didn't want to rely on that for executing the script.
+After a bit of searching I found a <a href="https://download.univention.de/pool/main/u/univention-python-heimdal/">download portal</a> which offered a Debian package and the source code etc.
+The package requires python below 3.8 and some other dependencies, but nothing too special. So I spun up a docker container to go on with the testing (The Dockerfile and final script can be found on our <a href="https://github.com/raeph123/univention_krb5key_decode">GitHub</a>).
+I extracted the function, added only the important imports, and fired it up in iPython... and failed:</p>
+
+<p><img src=".attachments/extract_nthash_fail.png" alt="extract_nthash_fail.png" /></p>
+
+<p>It seems that the <code>krb5Key</code> usually is not base64 encoded when passed to the function. But after modifying this, I am still running into an error.
+I started to break down the steps and came out with the following working script, which does basically the same steps as the actual function.</p>
+
+<pre><code class="language-python">
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+import binascii
+import heimdal
+import base64
+import argparse
+krb5_keytype__des_cbc_crc = 1
+krb5_keytype__des_cbc_md4 = 2
+krb5_keytype__des_cbc_md5 = 3
+krb5_keytype__des3_cbc_sha1 = 16
+krb5_keytype__aes128_cts_hmac_sha1_96 = 17
+krb5_keytype__aes256_cts_hmac_sha1_96 = 18
+krb5_keytype__arcfour_hmac_md5 = 23
+def extract_NThash_from_krb5key(ucs_krb5key):
+    NThash = None
+    keyblock,salt,kvno = heimdal.asn1_decode_key(base64.b64decode(ucs_krb5key))
+    if keyblock.keytype().toint() == krb5_keytype__arcfour_hmac_md5:
+        NThash = binascii.hexlify(keyblock.keyvalue()).decode('utf-8')
+    else:
+        print(f'Keytype is: ', keyblock.keytype().toint())
+    return NThash
+
+def main():
+    parser = argparse.ArgumentParser(
+            prog='ProgramName',
+                    description='Simple tool to extract ntlm hash out of the arcfour_hmac_md5 krb5key used by univention ucs')
+    parser.add_argument('-d', help="put your base64 encoded krb5key value here", required=True)
+    args = parser.parse_args()
+    nt_hash = extract_NThash_from_krb5key(args.d)
+    print("NThash: ",nt_hash)
+
+if __name__ == '__main__':
+    main()
+</code></pre>
+
+<p>And this worked like a charm. It allows us to extract the <code>NThash</code> out of the <code>krb5Key</code>.
+Now we could take the <code>krb5Key</code> of the <code>krbtgt</code> account for example to forge a ticket as <code>Administrator</code>, which is the default "Domain Admin" in UCS.</p>
+
+<p><img src=".attachments/AdminWorks.png" alt="AdminWorks.png" /></p>
+
+<p>And that's it. We can now be everybody we want to be :-).</p>
+
+<p>Maybe we can also use the other keyblock values to sign the TGTs somehow. But I didn't look into that so far.</p>
+
+<h2 id="cracking">Exploitation attempt 3: Hash Cracking</h2>
+
+<p>As we are in possession of the NThashes, we are also able to try password cracking quite efficiently. I confirmed that the <code>sambaNTPassword</code> represents the actual password.
+Using hashcat, some proper wordlists as well as some good rules, can open some more pathways.</p>
+
+<p>Using those methods we were able to go from "any user in the directory" to "Administrator", the "Domain Admin" equivalent because of some very basic misconfigurations, a trivial but impactful bug and a recoverable password.</p>
+
+<h2 id="solution">The Fix</h2>
+
+<p>The mitigation time and responses from <a href="https://www.univention.de/">Univention</a> have been extraordinary. It was a pleasure to work with them, as the communication was fast, professional as well as solution-oriented! Special thanks for this awesome experience and awareness for security!
+Univention rated the bug with <a href="https://forge.univention.org/bugzilla/show_bug.cgi?id=56324">7.9 (CVSS:3.1/AV:L/AC:L/PR:H/UI:N/S:C/C:H/I:H/A:N)</a></p>
+
+<p>CVE-2023-38994 was assigned by <a href="https://cve.mitre.org/">MITRE</a> for this issue.</p>
+
+<p>Fixed version: UCS 5.0-4
+Fix number: 1.0.2-4</p>
+
+<h2 id="lessons_learned">Lessons Learned</h2>
+
+<ul>
+<li>Do not grant "everyone" or "authenticated users" permissions to any machine if possible (and we guess that's possible in almost every scenario)</li>
+<li>Upgrade your software</li>
+<li>Set strong and unique passwords</li>
+<li>For developers and admins: Avoid sensitive information in process creations (Univention added this to their developers security guidelines. Great Job!)</li>
+</ul>
+
+<h2 id="timeline">Disclosure Timeline</h2>
+
+<p>2023/07/17 - Bug Reported<br />
+2023/07/17 - <a href="https://forge.univention.org/bugzilla/show_bug.cgi?id=56324">Bug confirmed by Univention and opened in their Bugtracker</a><br />
+2023/07/17 - <a href="https://github.com/univention/univention-corporate-server/commit/1745869fc12d95b4d65ec924285d43bd0a45ae57">GitHub push</a> to fix the Bug<br />
+2023/07/19 - Fix release in 1.0.2-4 <a href="https://errata.software-univention.de/#/?erratum=5.0x743">Release Note</a><br />
+2023/07/19 - Fix release of similar issues in another script <a href="https://errata.software-univention.de/#/?erratum=5.0x741">Release Note</a>
+</p>
+</body>
+</html>
